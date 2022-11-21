@@ -2,142 +2,79 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class TService implements Runnable{
-    TService[] services;
     Socket player;
-    Socket fighter;
+    Socket fighter = null;
     ChessBoard chessBoard;
     int winner = 0;
-    int[] active;
-    int playNum;
+    int PLAYER_NUM;
     Scanner in, in2;
     PrintWriter out, out2;
+    Map<Integer, Socket> playerMap;
+    Map<Socket, Integer> playerTypeMap;
 
     Lock lock = new ReentrantLock();
-    Condition winCondition = lock.newCondition();
+    Condition condition = lock.newCondition();
 
-    public TService(ServerSocket server, ChessBoard chessBoard, int[] active, int i, TService[] services){
-        try {
-            player = server.accept();
+    public TService (Socket player, Map<Integer, Socket> playerMap, Map<Socket, Integer> playerTypeMap) {
+        this.player = player;
+        this.playerMap = playerMap;
+        this.playerTypeMap = playerTypeMap;
+        try{
             in = new Scanner(player.getInputStream());
             out = new PrintWriter(player.getOutputStream());
-        } catch (IOException e) {
+        } catch(IOException e){
             e.printStackTrace();
         }
-        this.chessBoard = chessBoard;
-        this.active = active;
-        playNum = i;
-        this.services = services;
+        playerMap.forEach((key, value) -> {
+            if (value == player) this.PLAYER_NUM = key;
+        });
+        this.chessBoard = new ChessBoard();
     }
-
     @Override
     public void run() {
-        //try {
-            if(playNum%2 == 0) {
-                while(active[playNum+1] == 0) {
-                    if(!in.hasNext()) return;
-                    String require = in.nextLine();
-                    if(require.equals("REGISTER")) {
+        while(true) {
+            if(!in.hasNext())return;
+            String command = in.nextLine();
+            if(command.equals("CONNECT")){
+                int FIGHTER_NUM = PLAYER_NUM%2==0 ? PLAYER_NUM-1 : PLAYER_NUM+1;
+                try {
+                    if((fighter=playerMap.get(FIGHTER_NUM))==null) {
                         out.println("NO");
                         out.flush();
                     }
-                }
-                while (true) {
-                    if(!in.hasNext()) return;
-                    String require = in.nextLine();
-                    if(require.equals("REGISTER")) {
-                        out.println("ACCEPT");
-                        out.flush();
-                        try {
-                            fighter = services[playNum+1].player;
-                            in2 = new Scanner(fighter.getInputStream());
-                            out2 = new PrintWriter(fighter.getOutputStream());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    }
-                }
-
-            }
-            else {
-                while(active[playNum-1] == 0) {
-                    if(!in.hasNext()) return;
-                    String require = in.nextLine();
-                    if(require.equals("REGISTER")) {
-                        out.println("NO");
+                    else {
+                        in2 = new Scanner(fighter.getInputStream());
+                        out2 = new PrintWriter(fighter.getOutputStream());
+                        out.println("MATCH");
                         out.flush();
                     }
-                }
-                while(true) {
-                    if(!in.hasNext()) return;
-                    String require = in.nextLine();
-                    if(require.equals("REGISTER")) {
-                        out.println("ACCEPT");
-                        out.flush();
-                        try {
-                            fighter = services[playNum-1].player;
-                            in2 = new Scanner(fighter.getInputStream());
-                            out2 = new PrintWriter(fighter.getOutputStream());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    }
-                }
-
-            }
-
-
-            Thread check = new Thread(()->{
-                //lock.lock();
-                try{
-                    int winner = 0;
-                    while (winner == 0) {
-                        winner = chessBoard.checkWinner();
-                        Thread.sleep(100);
-                    }
-//                    while(winner==0) {
-//                        winCondition.await();
-//                        winner = chessBoard.checkWinner();
-//                    }
-                    out.println("WIN "+winner);
-                    out2.println("WIN "+winner);
-                    out.flush();
-                    out2.flush();
-                } catch (InterruptedException e){
+                }catch (IOException e) {
                     e.printStackTrace();
                 }
-//                finally {
-//                    lock.unlock();
-//                }
-            });
-            check.start();
+            }
+            else if (command.equals("START")) {
+                break;
+            }
+        }
         while(true) {
-            //lock.lock();
             if (!in.hasNext()) return;
             String command = in.next();
             int x = in.nextInt();
             int y = in.nextInt();
             int p = in.nextInt();
             command = command+" "+x+" "+y+" "+p;
-            if(chessBoard.setChess(x,y,p)) {
-                out.println(command);
-                out2.println(command);
-            }
-            else {
-                out.println("Invalid");
-                out2.println("Invalid");
-            }
+            out.println(command);
+            out2.println(command);
             out.flush();
             out2.flush();
-            //winCondition.signal();
-            //lock.unlock();
         }
     }
 }
