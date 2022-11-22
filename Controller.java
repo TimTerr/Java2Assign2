@@ -22,7 +22,7 @@ public class Controller implements Initializable {
     @FXML
     private Rectangle game_panel;
 
-    boolean TURN = false;
+    boolean TURN = true;
 
     private static final int[][] chessBoard = new int[3][3];
     private static final boolean[][] flag = new boolean[3][3];
@@ -57,10 +57,10 @@ public class Controller implements Initializable {
                 }
                 switch (chessBoard[i][j]) {
                     case PLAY_1:
-                        drawCircle(i, j);
+                        drawLine(i, j);
                         break;
                     case PLAY_2:
-                        drawLine(i, j);
+                        drawCircle(i, j);
                         break;
                     case EMPTY:
                         // do nothing
@@ -109,24 +109,30 @@ public class Controller implements Initializable {
                 int a, b, c;
                 if(i==0) {
                     a = chessBoard[i][j]; b = chessBoard[i+1][j];; c = chessBoard[i+2][j];
-                    if((winner = check(a, b, c)) > 0) break;
+                    if((winner = check(a, b, c)) > 0) return winner;
                 }
                 if (j==0) {
                     a = chessBoard[i][j]; b = chessBoard[i][j+1];; c = chessBoard[i][j+2];
-                    if((winner = check(a, b, c)) > 0) break;
+                    if((winner = check(a, b, c)) > 0) return winner;
                 }
                 if(i==0 && j==0) {
                     a = chessBoard[i][j]; b = chessBoard[i+1][j+1];; c = chessBoard[i+2][j+2];
-                    if((winner = check(a, b, c)) > 0) break;
+                    if((winner = check(a, b, c)) > 0) return winner;
                 }
                 if(i==0 && j==2){
                     a = chessBoard[i][j]; b = chessBoard[i+1][j-1];; c = chessBoard[i+2][j-2];
-                    if((winner = check(a, b, c)) > 0) break;
+                    if((winner = check(a, b, c)) > 0) return winner;
                 }
             }
-            if(winner > 0) break;
         }
-        return winner;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if(chessBoard[i][j] == 0){
+                    return 0;
+                }
+            }
+        }
+        return 3;
     }
     public int check(int a, int b, int c) {
         if(a>0 && b>0 && c>0) {

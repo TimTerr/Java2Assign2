@@ -13,7 +13,6 @@ public class TService implements Runnable{
     Socket player;
     Socket fighter = null;
     ChessBoard chessBoard;
-    int winner = 0;
     int PLAYER_NUM;
     Scanner in, in2;
     PrintWriter out, out2;
@@ -55,26 +54,51 @@ public class TService implements Runnable{
                         out2 = new PrintWriter(fighter.getOutputStream());
                         out.println("MATCH");
                         out.flush();
+                        break;
                     }
                 }catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            else if (command.equals("START")) {
+            else if(command.equals("EXIT")){
+
+            }
+            else{
+                out.println("NON_MATCH");
+                out.flush();
+            }
+        }
+        while(true){
+            if(!in.hasNext())return;
+            String command = in.nextLine();
+            if (command.equals("START")) {
+                int num = PLAYER_NUM%2==0 ? 2 : 1;
+                int roomNum = PLAYER_NUM%2==0 ? PLAYER_NUM-1 : PLAYER_NUM;
+                out.println(num+" "+roomNum);
+                out.flush();
                 break;
+            }
+            else if(command.equals("EXIT")){
+
+            }
+            else{
+                out.println("PLEASE_START");
+                out.flush();
             }
         }
         while(true) {
             if (!in.hasNext()) return;
-            String command = in.next();
-            int x = in.nextInt();
-            int y = in.nextInt();
-            int p = in.nextInt();
-            command = command+" "+x+" "+y+" "+p;
-            out.println(command);
-            out2.println(command);
-            out.flush();
-            out2.flush();
+            String command = in.nextLine();
+            if(command.equals("EXIT")){
+                out2.println(command);
+                out2.flush();
+            }
+            else if(command.contains("SET")){
+                out.println(command);
+                out2.println(command);
+                out.flush();
+                out2.flush();
+            }
         }
     }
 }
