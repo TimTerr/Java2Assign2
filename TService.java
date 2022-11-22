@@ -86,6 +86,18 @@ public class TService implements Runnable {
                 out.flush();
             }
         }
+        Thread t = new Thread(() -> {
+            try {
+                while (true) {
+                    player.sendUrgentData(0);
+                    Thread.sleep(5000);
+                }
+            } catch (IOException | InterruptedException e) {
+                out2.println("EXIT");
+                out2.flush();
+            }
+        });
+        t.start();
         while (true) {
             if (!in.hasNext()) {
                 return;
